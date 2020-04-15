@@ -24,9 +24,3 @@ HTTPS_PORT="443"
 # DNS Server for players to connect to
 DNS_SERVER="0.0.0.0"
 
-# Enable public metrics
-#PUBLIC_METRICS="FALSE"
-
-# Administrator password for accessing site metrics
-#ADMIN_PASSWORD=""
-

@@ -5,8 +5,12 @@ LABEL maintainer="hashsploit <hashsploit@protonmail.com>"
 
 ARG FQDN=opendnas.localhost
 ARG BASE_URL=https://opendnas.localhost
+ARG DNS_SERVER=0.0.0.0
+
 ENV FQDN $FQDN
 ENV BASE_URL $BASE_URL
+ENV DNS_SERVER $DNS_SERVER
+
 
 # Install dependencies
 RUN apt-get update >/dev/null 2>&1 \
@@ -17,25 +21,51 @@ RUN apt-get update >/dev/null 2>&1 \
 	gcc \
 	g++ \
 	gettext \
+	build-essential \
+	autoconf \
+	libtool \
+	libxml2-dev \
+	libjpeg-dev \
+	libpng-dev \
+	libfreetype6 \
+	libfreetype6-dev \
+	libmcrypt4 \
+	libmcrypt-dev \
+	libsqlite3-0 \
+	libsqlite3-dev \
+	libcurl4 \
+	pkg-config \
+	libcurl4-openssl-dev \
 	>/dev/null 2>&1
 
+
 # Install nginx + OpenSSL 1.0.2i (support for SSLv2)
-ADD https://www.openssl.org/source/old/1.0.2/openssl-1.0.2i.tar.gz /root/build/
+ADD [ \
+		"https://www.openssl.org/source/old/1.0.2/openssl-1.0.2i.tar.gz", \
+		"https://ftp.pcre.org/pub/pcre/pcre-8.40.tar.gz", \
+		"https://www.zlib.net/zlib-1.2.11.tar.gz", \
+		"https://nginx.org/download/nginx-1.16.1.tar.gz", \
+		"https://www.php.net/distributions/php-7.3.16.tar.gz", \
+		"/root/build/" \
+	]
 RUN cd /root/build/ \
 	&& tar -zxf openssl-1.0.2i.tar.gz \
-	&& rm -rf openssl-1.0.2d.tar.gz
-ADD https://ftp.pcre.org/pub/pcre/pcre-8.40.tar.gz /root/build/
-RUN cd /root/build/ \
+	&& rm -rf openssl-1.0.2d.tar.gz \
 	&& tar -zxf pcre-8.40.tar.gz \
-	&& rm -rf pcre-8.40.tar.gz
-ADD http://www.zlib.net/zlib-1.2.11.tar.gz /root/build/
-RUN cd /root/build/ \
+	&& rm -rf pcre-8.40.tar.gz \
 	&& tar -zxf zlib-1.2.11.tar.gz \
-	&& rm -rf zlib-1.2.11.tar.gz
-ADD https://nginx.org/download/nginx-1.16.1.tar.gz /root/build/
-RUN cd /root/build/ \
+	&& rm -rf zlib-1.2.11.tar.gz \
 	&& tar -zxf nginx-1.16.1.tar.gz \
-	&& rm -rf nginx-1.16.1.tar.gz
+	&& rm -rf nginx-1.16.1.tar.gz \
+	&& tar -zxf php-7.3.16.tar.gz \
+	&& rm -rf php-7.3.16.tar.gz
+
+# Compile openssl-1.0.2i (for php and system)
+RUN cd /root/build/openssl-1.0.2i \
+	&& ./config enable-ec_nistp_64_gcc_128 enable-weak-ssl-ciphers \
+	&& make \
+	&& make install
+
 RUN cd /root/build/nginx-1.16.1/ \
 	&& ./configure --prefix=/usr/share/nginx \
 		--sbin-path=/usr/sbin/nginx \
@@ -54,9 +84,8 @@ RUN cd /root/build/nginx-1.16.1/ \
 		--http-scgi-temp-path=/var/lib/nginx/scgi \
 		--http-uwsgi-temp-path=/var/lib/nginx/uwsgi \
 		--with-openssl=../openssl-1.0.2i \
-        --with-openssl-opt=enable-ec_nistp_64_gcc_128 \
-        --with-openssl-opt=enable-weak-ssl-ciphers \
 		--with-openssl-opt=enable-ec_nistp_64_gcc_128 \
+		--with-openssl-opt=enable-weak-ssl-ciphers \
 		--with-pcre=../pcre-8.40 \
 		--with-pcre-jit \
 		--with-zlib=../zlib-1.2.11 \
@@ -89,15 +118,42 @@ RUN cd /root/build/nginx-1.16.1/ \
 	&& mkdir -p /var/lib/nginx/fastcgi \
 	&& mkdir -p /var/lib/nginx/proxy \
 	&& mkdir -p /var/lib/nginx/scgi \
-	&& mkdir -p /var/lib/nginx/uwsgi \
-	&& rm -rf /root/build/
+	&& mkdir -p /var/lib/nginx/uwsgi
 
-# Install php-fpm
-RUN apt-get install -y \
-	php7.3-fpm \
-	php7.3-json \
-	php7.3-curl \
-	>/dev/null 2>&1
+# Install php7.4-fpm
+RUN cd /root/build/php-7.3.16/ \
+	&& chmod +x configure \
+	&& ./configure \
+		--enable-fpm \
+		--enable-sockets \
+		--enable-bcmath \
+		--enable-phar \
+		--with-gettext \
+		--with-openssl-dir=../openssl-1.0.2i \
+		--with-mhash \
+		--with-curl \
+		--with-fpm-user=www-data \
+		--with-fpm-group=www-data \
+#		--with-config-file-path=/etc/php/ \
+#		--with-config-file-scan-dir=/etc/php/conf.d/ \
+		--with-libdir=lib/x86_64-linux-gnu \
+	&& make
+
+RUN cd /root/build/php-7.3.16/ \
+	&& make install
+
+#RUN cp /usr/local/etc/php-fpm.conf.default /usr/local/etc/php-fpm.conf
+#RUN cat /usr/local/etc/php-fpm.conf
+
+#RUN cd /root/build/php-7.3.16/ \
+#	&& make install \
+#	&& mkdir -p /etc/php \
+#	&& cp php.ini-production /etc/php/php.ini \
+#	&& cp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \
+#	&& chmod +x /etc/init.d/php-fpm \
+#	&& update-rc.d php-fpm defaults \
+#	&& /etc/init.d/php-fpm start
+
 
 # Install OpenDNAS and copy configuration
 ADD https://github.com/hashsploit/OpenDNAS/archive/master.zip /tmp/
@@ -110,7 +166,7 @@ COPY scripts/ /
 RUN echo "Installing OpenDNAS ..." \
 	&& envsubst '${FQDN},${BASE_URL}' < /etc/nginx/nginx.conf > /tmp/nginx.conf \
 	&& envsubst < /var/www/OpenDNAS/public/index.html > /tmp/index.html \
-	&& envsubst < /var/www/OpenDNAS/public/oembed.json > /tmp/oembed.json \
+	&& envsubst '${BASE_URL}' < /var/www/OpenDNAS/public/oembed.json > /tmp/oembed.json \
 	&& cp /tmp/nginx.conf /etc/nginx/nginx.conf \
 	&& cp /tmp/index.html /var/www/OpenDNAS/public/index.html \
 	&& cp /tmp/oembed.json /var/www/OpenDNAS/public/oembed.json \
@@ -118,7 +174,7 @@ RUN echo "Installing OpenDNAS ..." \
 	&& rm -rf \
 		/etc/nginx/sites-enabled/ \
 		/etc/nginx/sites-available/ \
-		/tmp/copy/ \
+		/tmp/* \
 		/var/www/OpenDNAS/.gitignore \
 		/var/www/OpenDNAS/LICENSE \
 		/var/www/OpenDNAS/nginx.vhost \
@@ -130,11 +186,14 @@ RUN echo "Installing OpenDNAS ..." \
 		-days 9999 \
 		-subj "/C=US/ST=California/L=San Francisco/O=${FQDN}/OU=Org/CN=${FQDN}" \
 	&& chmod 755 -R /var/www \
-	&& chown www-data:www-data -R /var/www
+	&& chown www-data:www-data -R /var/www \
+	&& rm -rf /root/build/
+
 
 # Expose service
 EXPOSE 80
 EXPOSE 443
+
 
 # Execute start
 CMD ["/usr/sbin/nginx", "-g", "daemon off"]

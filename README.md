@@ -9,10 +9,8 @@ The following dependencies will automatically be built in the container:
 - make
 - gcc
 - OpenSSL 1.0.2i (for SSLv2)
-- nginx
+- nginx 1.16.1
 - php7.3-fpm
-- php7.3-json
-- php7.3-curl
 - gettext (for envsubst)
 
 ### 1. Configure image

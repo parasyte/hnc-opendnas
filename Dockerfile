@@ -45,7 +45,7 @@ ADD [ \
 		"https://ftp.pcre.org/pub/pcre/pcre-8.40.tar.gz", \
 		"https://www.zlib.net/zlib-1.2.11.tar.gz", \
 		"https://nginx.org/download/nginx-1.16.1.tar.gz", \
-		"https://www.php.net/distributions/php-7.3.16.tar.gz", \
+		"https://www.php.net/distributions/php-7.4.4.tar.gz", \
 		"/root/build/" \
 	]
 RUN cd /root/build/ \
@@ -57,8 +57,8 @@ RUN cd /root/build/ \
 	&& rm -rf zlib-1.2.11.tar.gz \
 	&& tar -zxf nginx-1.16.1.tar.gz \
 	&& rm -rf nginx-1.16.1.tar.gz \
-	&& tar -zxf php-7.3.16.tar.gz \
-	&& rm -rf php-7.3.16.tar.gz
+	&& tar -zxf php-7.4.4.tar.gz \
+	&& rm -rf php-7.4.4.tar.gz
 
 # Compile openssl-1.0.2i (for php and system)
 RUN cd /root/build/openssl-1.0.2i \
@@ -121,7 +121,7 @@ RUN cd /root/build/nginx-1.16.1/ \
 	&& mkdir -p /var/lib/nginx/uwsgi
 
 # Install php7.4-fpm
-RUN cd /root/build/php-7.3.16/ \
+RUN cd /root/build/php-7.4.4/ \
 	&& chmod +x configure \
 	&& ./configure \
 		--enable-fpm \
@@ -139,7 +139,7 @@ RUN cd /root/build/php-7.3.16/ \
 		--with-libdir=lib/x86_64-linux-gnu \
 	&& make
 
-RUN cd /root/build/php-7.3.16/ \
+RUN cd /root/build/php-7.4.4/ \
 	&& make install
 
 #RUN cp /usr/local/etc/php-fpm.conf.default /usr/local/etc/php-fpm.conf

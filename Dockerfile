@@ -205,4 +205,4 @@ EXPOSE 443
 
 
 # Execute start
-CMD ["bash", "/srv/entrypoint.sh"]
+CMD ["bash", "/srv/start.sh"]

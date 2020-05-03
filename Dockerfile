@@ -33,9 +33,7 @@ RUN apt-get update >/dev/null 2>&1 \
 	libmcrypt-dev \
 	libsqlite3-0 \
 	libsqlite3-dev \
-#	libcurl4 \
 	pkg-config \
-#	libcurl4-openssl-dev \
 	>/dev/null 2>&1
 
 
@@ -150,8 +148,6 @@ RUN cd /root/build/php-7.4.4/ \
 		--with-curl \
 		--with-fpm-user=www-data \
 		--with-fpm-group=www-data \
-#		--with-config-file-path=/usr/local/php/etc/ \
-#		--with-config-file-scan-dir=/usr/local/php/etc/conf.d/ \
 		--with-libdir=lib/x86_64-linux-gnu \
 	&& make
 
@@ -200,7 +196,7 @@ RUN echo "Installing OpenDNAS ..." \
 
 
 # Make startup script executable
-RUN chmod +x /root/start.sh
+RUN chmod +x /srv/entrypoint.sh
 
 
 # Expose service
@@ -209,4 +205,4 @@ EXPOSE 443
 
 
 # Execute start
-CMD ["bash", "/root/start.sh"]
+CMD ["bash", "/srv/entrypoint.sh"]

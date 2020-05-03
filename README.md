@@ -15,7 +15,7 @@ The following dependencies will automatically be built in the container:
 
 ### 1. Configure image
 
-Configure the OpenDNAS server in the `OpenDNAS/` directory and `settings.sh` file.
+Configure the OpenDNAS server in the `settings.sh` file.
 
 ### 2. Build the image
 

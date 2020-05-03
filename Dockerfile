@@ -196,7 +196,7 @@ RUN echo "Installing OpenDNAS ..." \
 
 
 # Make startup script executable
-RUN chmod +x /srv/entrypoint.sh
+RUN chmod +x /srv/start.sh
 
 
 # Expose service

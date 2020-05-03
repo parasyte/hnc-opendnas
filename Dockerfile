@@ -33,39 +33,54 @@ RUN apt-get update >/dev/null 2>&1 \
 	libmcrypt-dev \
 	libsqlite3-0 \
 	libsqlite3-dev \
-	libcurl4 \
+#	libcurl4 \
 	pkg-config \
-	libcurl4-openssl-dev \
+#	libcurl4-openssl-dev \
 	>/dev/null 2>&1
 
 
-# Install nginx + OpenSSL 1.0.2i (support for SSLv2)
+# Download dependencies
 ADD [ \
 		"https://www.openssl.org/source/old/1.0.2/openssl-1.0.2i.tar.gz", \
 		"https://ftp.pcre.org/pub/pcre/pcre-8.40.tar.gz", \
 		"https://www.zlib.net/zlib-1.2.11.tar.gz", \
 		"https://nginx.org/download/nginx-1.16.1.tar.gz", \
 		"https://www.php.net/distributions/php-7.4.4.tar.gz", \
+		"https://github.com/curl/curl/releases/download/curl-7_70_0/curl-7.70.0.tar.gz", \
 		"/root/build/" \
 	]
+
+
 RUN cd /root/build/ \
 	&& tar -zxf openssl-1.0.2i.tar.gz \
-	&& rm -rf openssl-1.0.2d.tar.gz \
+	&& rm -f openssl-1.0.2i.tar.gz \
 	&& tar -zxf pcre-8.40.tar.gz \
-	&& rm -rf pcre-8.40.tar.gz \
+	&& rm -f pcre-8.40.tar.gz \
 	&& tar -zxf zlib-1.2.11.tar.gz \
-	&& rm -rf zlib-1.2.11.tar.gz \
+	&& rm -f zlib-1.2.11.tar.gz \
 	&& tar -zxf nginx-1.16.1.tar.gz \
-	&& rm -rf nginx-1.16.1.tar.gz \
+	&& rm -f nginx-1.16.1.tar.gz \
 	&& tar -zxf php-7.4.4.tar.gz \
-	&& rm -rf php-7.4.4.tar.gz
+	&& rm -f php-7.4.4.tar.gz \
+	&& tar -zxf curl-7.70.0.tar.gz \
+	&& rm -f curl-7.70.0.tar.gz
 
-# Compile openssl-1.0.2i (for php and system)
+
+# Compile openssl-1.0.2i (support for SSLv2)
 RUN cd /root/build/openssl-1.0.2i \
 	&& ./config enable-ec_nistp_64_gcc_128 enable-weak-ssl-ciphers \
+	&& make depend \
+	&& make \
+	&& make install_sw
+
+
+# Compile curl
+RUN cd /root/build/curl-7.70.0 \
+	&& ./configure --with-openssl=../openssl-1.0.2i \
 	&& make \
 	&& make install
 
+# Install nginx
 RUN cd /root/build/nginx-1.16.1/ \
 	&& ./configure --prefix=/usr/share/nginx \
 		--sbin-path=/usr/sbin/nginx \
@@ -120,6 +135,7 @@ RUN cd /root/build/nginx-1.16.1/ \
 	&& mkdir -p /var/lib/nginx/scgi \
 	&& mkdir -p /var/lib/nginx/uwsgi
 
+
 # Install php7.4-fpm
 RUN cd /root/build/php-7.4.4/ \
 	&& chmod +x configure \
@@ -134,33 +150,26 @@ RUN cd /root/build/php-7.4.4/ \
 		--with-curl \
 		--with-fpm-user=www-data \
 		--with-fpm-group=www-data \
-#		--with-config-file-path=/etc/php/ \
-#		--with-config-file-scan-dir=/etc/php/conf.d/ \
+#		--with-config-file-path=/usr/local/php/etc/ \
+#		--with-config-file-scan-dir=/usr/local/php/etc/conf.d/ \
 		--with-libdir=lib/x86_64-linux-gnu \
 	&& make
 
 RUN cd /root/build/php-7.4.4/ \
-	&& make install
-
-#RUN cp /usr/local/etc/php-fpm.conf.default /usr/local/etc/php-fpm.conf
-#RUN cat /usr/local/etc/php-fpm.conf
-
-#RUN cd /root/build/php-7.3.16/ \
-#	&& make install \
-#	&& mkdir -p /etc/php \
-#	&& cp php.ini-production /etc/php/php.ini \
-#	&& cp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \
-#	&& chmod +x /etc/init.d/php-fpm \
-#	&& update-rc.d php-fpm defaults \
-#	&& /etc/init.d/php-fpm start
-
+	&& make install \
+	&& cp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \
+	&& chmod +x /etc/init.d/php-fpm \
+	&& update-rc.d php-fpm defaults \
+	&& mv /usr/local/etc/php-fpm.conf.default /usr/local/etc/php-fpm.conf \
+	&& sed -i 's|NONE/etc/php-fpm.d/\*.conf|/usr/local/etc/php-fpm.d/\*.conf|g' /usr/local/etc/php-fpm.conf \
+	&& mv /usr/local/etc/php-fpm.d/www.conf.default /usr/local/etc/php-fpm.d/www.conf \
+	&& /etc/init.d/php-fpm start
 
 # Install OpenDNAS and copy configuration
 ADD https://github.com/hashsploit/OpenDNAS/archive/master.zip /tmp/
 RUN cd /tmp/ \
 	&& unzip master.zip \
 	&& rm -rf master.zip \
-	&& ls -laph /tmp && ls -laph /var/www/ \
 	&& mv OpenDNAS-master/ /var/www/OpenDNAS/
 COPY scripts/ /
 RUN echo "Installing OpenDNAS ..." \
@@ -190,10 +199,14 @@ RUN echo "Installing OpenDNAS ..." \
 	&& rm -rf /root/build/
 
 
+# Make startup script executable
+RUN chmod +x /root/start.sh
+
+
 # Expose service
 EXPOSE 80
 EXPOSE 443
 
 
 # Execute start
-CMD ["/usr/sbin/nginx", "-g", "daemon off"]
+CMD ["bash", "/root/start.sh"]

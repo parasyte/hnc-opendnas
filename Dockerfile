@@ -43,7 +43,7 @@ ADD [ \
 		"https://ftp.pcre.org/pub/pcre/pcre-8.40.tar.gz", \
 		"https://www.zlib.net/zlib-1.2.11.tar.gz", \
 		"https://nginx.org/download/nginx-1.16.1.tar.gz", \
-		"https://www.php.net/distributions/php-7.4.4.tar.gz", \
+		"https://www.php.net/distributions/php-7.0.15.tar.gz", \
 		"https://github.com/curl/curl/releases/download/curl-7_70_0/curl-7.70.0.tar.gz", \
 		"/root/build/" \
 	]
@@ -58,8 +58,8 @@ RUN cd /root/build/ \
 	&& rm -f zlib-1.2.11.tar.gz \
 	&& tar -zxf nginx-1.16.1.tar.gz \
 	&& rm -f nginx-1.16.1.tar.gz \
-	&& tar -zxf php-7.4.4.tar.gz \
-	&& rm -f php-7.4.4.tar.gz \
+	&& tar -zxf php-7.0.15.tar.gz \
+	&& rm -f php-7.0.15.tar.gz \
 	&& tar -zxf curl-7.70.0.tar.gz \
 	&& rm -f curl-7.70.0.tar.gz
 
@@ -134,8 +134,8 @@ RUN cd /root/build/nginx-1.16.1/ \
 	&& mkdir -p /var/lib/nginx/uwsgi
 
 
-# Install php7.4-fpm
-RUN cd /root/build/php-7.4.4/ \
+# Install php7.0.15-fpm
+RUN cd /root/build/php-7.0.15/ \
 	&& chmod +x configure \
 	&& ./configure \
 		--enable-fpm \
@@ -145,13 +145,14 @@ RUN cd /root/build/php-7.4.4/ \
 		--with-gettext \
 		--with-openssl-dir=../openssl-1.0.2i \
 		--with-mhash \
+		--with-mcrypt \
 		--with-curl \
 		--with-fpm-user=www-data \
 		--with-fpm-group=www-data \
 		--with-libdir=lib/x86_64-linux-gnu \
 	&& make
 
-RUN cd /root/build/php-7.4.4/ \
+RUN cd /root/build/php-7.0.15/ \
 	&& make install \
 	&& cp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \
 	&& chmod +x /etc/init.d/php-fpm \

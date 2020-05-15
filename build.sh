@@ -9,8 +9,7 @@ source ./settings.sh
 #docker rmi ${IMAGE_NAME}
 docker build --force-rm \
 	--rm \
-	--build-arg FQDN=${FQDN} \
-	--build-arg BASE_URL=${BASE_URL} \
+	--build-arg EMAIL=${EMAIL} \
 	--build-arg BASE_URL=${DNS_SERVER} \
 	--tag ${IMAGE_NAME} .
 

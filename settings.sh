@@ -6,20 +6,11 @@ IMAGE_NAME="hnc-opendnas:latest"
 # The container's name when spawning
 CONTAINER_NAME="hnc-opendnas"
 
+# Email address
+EMAIL="opendnas@example.com"
+
 # Maximum memory for this container
 MAX_MEMORY="512m"
-
-# FQDN - Domain name
-FQDN="opendnas.localhost"
-
-# Base URL
-BASE_URL="https://${FQDN}/"
-
-# HTTP port
-HTTP_PORT="80"
-
-# HTTPS Port
-HTTPS_PORT="443"
 
 # DNS Server for players to connect to
 DNS_SERVER="0.0.0.0"

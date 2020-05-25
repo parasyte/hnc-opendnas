@@ -42,7 +42,7 @@ ADD [ \
 		"https://www.openssl.org/source/old/1.0.2/openssl-1.0.2i.tar.gz", \
 		"https://ftp.pcre.org/pub/pcre/pcre-8.40.tar.gz", \
 		"https://www.zlib.net/zlib-1.2.11.tar.gz", \
-		"https://archive.apache.org/dist/httpd/httpd-2.4.2.tar.gz", \
+		"https://archive.apache.org/dist/httpd/httpd-2.4.20.tar.gz", \
 		"https://www.php.net/distributions/php-7.0.15.tar.gz", \
 		"https://github.com/curl/curl/releases/download/curl-7_70_0/curl-7.70.0.tar.gz", \
 		"/root/build/" \
@@ -56,8 +56,8 @@ RUN cd /root/build/ \
 	&& rm -f pcre-8.40.tar.gz \
 	&& tar -zxf zlib-1.2.11.tar.gz \
 	&& rm -f zlib-1.2.11.tar.gz \
-	&& tar -zxf httpd-2.4.2.tar.gz \
-	&& rm -f httpd-2.4.2.tar.gz \
+	&& tar -zxf httpd-2.4.20.tar.gz \
+	&& rm -f httpd-2.4.20.tar.gz \
 	&& tar -zxf php-7.0.15.tar.gz \
 	&& rm -f php-7.0.15.tar.gz \
 	&& tar -zxf curl-7.70.0.tar.gz \
@@ -80,13 +80,14 @@ RUN cd /root/build/curl-7.70.0 \
 
 
 # Install apache
-RUN cd /root/build/httpd-2.4.2 \
+RUN cd /root/build/httpd-2.4.20 \
 	&& ./configure --prefix=/etc/apache2 \
-		--enable-access_compat \
+		--with-included-apr \
+#		--enable-access_compat \
 		--enable-actions \
 		--enable-alias \
 		--enable-allowmethods \
-		--enable-auth_basic \
+#		--enable-auth_basic \
 		--enable-rewrite \
 		--enable-proxy \
 		--enable-expires \
@@ -95,16 +96,16 @@ RUN cd /root/build/httpd-2.4.2 \
 		--enable-env \
 		--enable-headers \
 		--enable-include \
-		--enable-log_config \
+#		--enable-log_config \
 		--enable-mime \
 		--enable-negotiation \
 		--enable-proxy \
 		--enable-proxy_http \
 		--enable-rewrite \
-		--enable-setenvif \
-		--with-ssl=/usr/local/ssl \
-		--enable-ssl \
+#		--enable-setenvif \
 		--enable-so \
+		--enable-ssl \
+		--with-ssl=/usr/local/ssl \
 	&& make \
 	&& make install
 
